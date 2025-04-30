@@ -12,11 +12,10 @@ public class Patron extends Thread {
 	private Random random;// for variation in Patron behaviour
 	private CountDownLatch startSignal; //all start at once, actually shared
 	private Barman theBarman; //the Barman is actually shared though
-
+	public long TurnTimeperPatr; 
 	private int ID; //thread ID 
 	private int numberOfDrinks;
-
-
+	long startTurnTime;
 	private DrinkOrder [] drinksOrder;
 	
 	Patron( int ID,  CountDownLatch startSignal, Barman aBarman, long seed) {
@@ -33,7 +32,7 @@ public class Patron extends Thread {
 //this is what the threads do	
 	public void run() {
 		try {
-			
+			startTurnTime = System.nanoTime();
 			//Do NOT change the block of code below - this is the arrival times
 			startSignal.countDown(); //this patron is ready
 			startSignal.await(); //wait till everyone is ready
@@ -47,12 +46,18 @@ public class Patron extends Thread {
 	        	//drinksOrder[i]=new DrinkOrder(this.ID,i); //fixed drink order (=CPU burst), useful for testing
 				System.out.println("Order placed by " + drinksOrder[i].toString()); //output in standard format  - do not change this
 				theBarman.placeDrinkOrder(drinksOrder[i]);
+				//Start timer 
+				
+				
 				drinksOrder[i].waitForOrder();
 				System.out.println("Drinking patron " + drinksOrder[i].toString());
 				sleep(drinksOrder[i].getImbibingTime()); //drinking drink = "IO"
 			}
 
-			System.out.println("Patron "+ this.ID + " completed ");
+				System.out.println("Patron " + this.ID + " completed ");
+				TurnTimeperPatr = System.nanoTime() - startTurnTime;
+				TurnTimeperPatr /= 1_000_000;//milliseconds
+			
 			
 		} catch (InterruptedException e1) {  //do nothing
 		}

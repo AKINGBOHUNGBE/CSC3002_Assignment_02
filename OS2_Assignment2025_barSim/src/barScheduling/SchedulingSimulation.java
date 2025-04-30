@@ -19,10 +19,12 @@ public class SchedulingSimulation {
 	static Barman Sarah;
 
 	
+	
 
 	public static void main(String[] args) throws InterruptedException, IOException {
 
 		//deal with command line arguments if provided
+		long totRuntimeStart = System.nanoTime(); 
 		if (args.length>=1) noPatrons=Integer.parseInt(args[0]);  //total people to enter room
 		if (args.length>=2) sched=Integer.parseInt(args[1]); 	// alg to use
 		if (args.length>=3) s=Integer.parseInt(args[2]);  //context switch 
@@ -38,14 +40,19 @@ public class SchedulingSimulation {
   
 	    //create all the patrons, who all need access to Barman
 		patrons = new Patron[noPatrons];
+		long startTimer = System.nanoTime();
 		for (int i=0;i<noPatrons;i++) {
 			patrons[i] = new Patron(i,startSignal,Sarah,seed);
 			patrons[i].start();
 		}
 		
-		if (seed>0) DrinkOrder.random = new Random(seed);// for consistent Patron behaviour
+		if (seed > 0)
+			DrinkOrder.random = new Random(seed);
+			// for consistent Patron behaviour
 
-		
+		else System.out.println("No seed was selected.");
+
+	
 		System.out.println("------Sarah the Barman Scheduling Simulation------");
 		System.out.println("-------------- with "+ Integer.toString(noPatrons) + " patrons---------------");
 		switch(sched) {
@@ -60,14 +67,28 @@ public class SchedulingSimulation {
 		}
 		
 			
-      	startSignal.countDown(); //main method ready
+		startSignal.countDown(); //main method ready
+		long totalTurnaroundTime = 0;
       	
       	//wait till all patrons done, otherwise race condition on the file closing!
-      	for (int i=0;i<noPatrons;i++)  patrons[i].join();
+		for (int i = 0; i < noPatrons; i++) {
+			patrons[i].join();
+			totalTurnaroundTime += patrons[i].TurnTimeperPatr;
+		}
+			
+
+		
 
     	System.out.println("------Waiting for Barman------");
     	Sarah.interrupt();   //tell Barman to close up
-    	Sarah.join(); //wait till she has
-      	System.out.println("------Bar closed------");
+		Sarah.join(); //wait till she has
+		long TotRuntime = System.nanoTime() - totRuntimeStart;
+		TotRuntime /= 1_000_000;
+		System.out.println("------Bar closed------");
+		System.out.println("The Average wait time for the orders: " + Long.toString(Sarah.getTotWaitTime()/noPatrons));
+		System.out.println("The Average turnaround time for the orders: " + Long.toString((totalTurnaroundTime)/noPatrons));
+		System.out.println("The Total runtime for the orders: " + Long.toString(TotRuntime));
+
+
  	}
 }
